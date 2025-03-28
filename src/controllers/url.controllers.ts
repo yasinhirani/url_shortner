@@ -82,10 +82,15 @@ const redirectToUrl = asyncHandler(
       return;
     }
 
-    const urlRes = await urlModel.findOne({ urlCode: shortCode });
+    let urlRes;
+
+    urlRes = await urlModel.findOne({ urlCode: shortCode });
 
     if (!urlRes) {
-      throw new ApiError("Invalid URL", 400);
+      urlRes = await urlWithoutUserIdModel.findOne({ urlCode: shortCode });
+      if (!urlRes) {
+        throw new ApiError("Invalid URL", 400);
+      }
     }
 
     await client.setEx(shortCode as string, 3600, urlRes.longUrl as string);

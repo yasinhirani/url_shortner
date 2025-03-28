@@ -82,9 +82,13 @@ const redirectToUrl = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awa
         res.redirect(cachedUrl);
         return;
     }
-    const urlRes = yield urls_model_1.urlModel.findOne({ urlCode: shortCode });
+    let urlRes;
+    urlRes = yield urls_model_1.urlModel.findOne({ urlCode: shortCode });
     if (!urlRes) {
-        throw new apiError_1.default("Invalid URL", 400);
+        urlRes = yield urls_model_1.urlWithoutUserIdModel.findOne({ urlCode: shortCode });
+        if (!urlRes) {
+            throw new apiError_1.default("Invalid URL", 400);
+        }
     }
     yield db_1.client.setEx(shortCode, 3600, urlRes.longUrl);
     res.redirect((_a = urlRes.longUrl) !== null && _a !== void 0 ? _a : "");
