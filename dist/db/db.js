@@ -22,9 +22,9 @@ const connectDB = () => __awaiter(void 0, void 0, void 0, function* () {
 exports.connectDB = connectDB;
 exports.client = (0, redis_1.createClient)({
     username: "default",
-    password: process.env.REDIS_PASSWORD,
+    password: '2fvx4cjEmt1mrRq47lhGcYKh7PLHR0BM',
     socket: {
-        host: process.env.REDIS_HOST,
+        host: 'redis-15219.c84.us-east-1-2.ec2.redns.redis-cloud.com',
         port: 15219,
     },
 });

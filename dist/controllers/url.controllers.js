@@ -26,21 +26,36 @@ const shortenUrl = (0, asyncHandler_1.asyncHandler)((req, res, next) => __awaite
         throw new apiError_1.default(result.array({ onlyFirstError: true })[0].msg, 400);
     }
     const { userId, url } = req.body;
-    const existingUrl = yield urls_model_1.urlModel.findOne({ userId, longUrl: url });
+    let existingUrl;
+    if (userId) {
+        existingUrl = yield urls_model_1.urlModel.findOne({ userId, longUrl: url });
+    }
+    else {
+        existingUrl = yield urls_model_1.urlWithoutUserIdModel.findOne({ longUrl: url });
+    }
     if (existingUrl) {
         res.status(200).json(new apiResponse_1.default({
-            shortUrl: `http://localhost:8080/${existingUrl.urlCode}`,
+            shortUrl: `${process.env.HOST_URL}${existingUrl.urlCode}`,
         }));
         return;
     }
     while (true) {
         try {
             const urlCode = (0, generateBase58Code_1.generateBase58Code)();
-            const codeRes = yield new urls_model_1.urlModel({
-                userId,
-                longUrl: url,
-                urlCode,
-            }).save();
+            let codeRes;
+            if (!userId) {
+                codeRes = yield new urls_model_1.urlWithoutUserIdModel({
+                    longUrl: url,
+                    urlCode,
+                }).save();
+            }
+            else {
+                codeRes = yield new urls_model_1.urlModel({
+                    userId,
+                    longUrl: url,
+                    urlCode,
+                }).save();
+            }
             if (codeRes) {
                 res.status(200).json(new apiResponse_1.default({
                     shortUrl: `${process.env.HOST_URL}${codeRes.urlCode}`,

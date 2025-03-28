@@ -3,7 +3,7 @@ import { asyncHandler } from "../utilities/asyncHandler";
 import { validationResult } from "express-validator";
 import ApiError from "../utilities/apiError";
 import { generateBase58Code } from "../utilities/generateBase58Code";
-import { urlModel } from "../model/urls.model";
+import { urlModel, urlWithoutUserIdModel } from "../model/urls.model";
 import ApiResponse from "../utilities/apiResponse";
 import { client } from "../db/db";
 
@@ -17,12 +17,18 @@ const shortenUrl = asyncHandler(
 
     const { userId, url } = req.body;
 
-    const existingUrl = await urlModel.findOne({ userId, longUrl: url });
+    let existingUrl;
+
+    if (userId) {
+      existingUrl = await urlModel.findOne({ userId, longUrl: url });
+    } else {
+      existingUrl = await urlWithoutUserIdModel.findOne({ longUrl: url });
+    }
 
     if (existingUrl) {
       res.status(200).json(
         new ApiResponse({
-          shortUrl: `http://localhost:8080/${existingUrl.urlCode}`,
+          shortUrl: `${process.env.HOST_URL}${existingUrl.urlCode}`,
         })
       );
       return;
@@ -31,11 +37,19 @@ const shortenUrl = asyncHandler(
     while (true) {
       try {
         const urlCode = generateBase58Code();
-        const codeRes = await new urlModel({
-          userId,
-          longUrl: url,
-          urlCode,
-        }).save();
+        let codeRes;
+        if (!userId) {
+          codeRes = await new urlWithoutUserIdModel({
+            longUrl: url,
+            urlCode,
+          }).save();
+        } else {
+          codeRes = await new urlModel({
+            userId,
+            longUrl: url,
+            urlCode,
+          }).save();
+        }
         if (codeRes) {
           res.status(200).json(
             new ApiResponse({
